@@ -17,39 +17,39 @@ class Producto(db.Model):
     )
 
     url_foto = db.Column(
-        db.text,
+        db.Text,
         unique=True,
         nullable=True
     )
 
     precio = db.Column(
-        db.numeric(3, 2),
+        db.Numeric(3, 2),
         nullable=True
     )
 
     cantidad = db.Column(
-        db.integer,
+        db.Integer,
         nullable=True
     )
 
     descripcion = db.Column(
-        db.string(150),
+        db.String(150),
         nullable=True
     )
 
     comprado = db.Column(
-        db.boolean,
+        db.Boolean,
         nullable=True
     )
 
     tipo = db.Column(
-        db.integer,
+        db.Integer,
         nullable=True
     )
 
     material = db.Column(
-        db.string(7),
-        nulable=True
+        db.String(7),
+        nullable=True
     )
 
     #Objeto

@@ -6,7 +6,7 @@ import os
 from flask_sqlalchemy import SQLAlchemy
 from config import DATABASE_CONNECTION
 
-from services.usuario import usuario_routes
+from services.producto import producto_routes
 
 app = Flask(__name__)
 
@@ -21,7 +21,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_CONNECTION
 
 db.init_app(app)
 
-app.register_blueprint(usuario_routes, url_prefix='/usuario_routes')
+app.register_blueprint(producto_routes, url_prefix='/producto_routes')
 
 with app.app_context():
     db.create_all()
