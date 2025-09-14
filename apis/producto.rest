@@ -1,0 +1,39 @@
+#REGISTRO PRODUCTO
+POST http://127.0.0.1:5000/producto_routes/registro_producto
+Content-Type: application/json
+
+{
+    "id_vendedor": 1,
+    "url_foto": "http://example.com/foto.jpg",
+    "precio": 5.0,
+    "cantidad": 10,
+    "descripcion": "Producto de prueba",
+    "comprado": false,
+    "tipo": 1,
+    "material": "1,2",
+    "nombre": "Mesa"
+}
+###
+
+
+#FILTRAR PRODUCTOS POR TIPO Y MATERIAL
+POST http://127.0.0.1:5000/producto_routes/filtrar_productos
+Content-Type: application/json
+
+{
+    "tipo": [1,2],
+    "material": "2,4"
+}
+
+###
+
+# DETALLE DE PRODUCTO (incluye nombre del vendedor)
+POST http://127.0.0.1:5000/producto_routes/producto_detalle
+Content-Type: application/json
+
+{
+    "id_producto": 3
+}
+
+###
+

@@ -2,12 +2,14 @@ from flask import Blueprint, request, jsonify, make_response
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 from utils.db import db
+import requests
 
 from models.producto import Producto
 from schemas.producto import producto_registro_schema
 from schemas.producto import producto_consulta_schema
 from schemas.producto import producto_detalle_schema
 from schemas.producto import producto_filtrado_schema
+
 
 
 producto_routes = Blueprint("producto_routes", __name__)
@@ -53,31 +55,29 @@ def registro_producto():
     }
     return make_response(jsonify(data), 201)
 
-
-
-#listar productos por  tipo
+#listar productos por tipo y material
 @producto_routes.route('/filtrar_productos/', methods=['POST'])
 def listar_productos_por_tipo():
-    try:
-        datos = producto_registro_schema.load(request.get_json())
-    except ValidationError as err:
-        return make_response(jsonify({"errors": err.messages, "status": 400}), 400)
-    tipos = datos["tipos"]
-    materiales = datos["materiales"]
+    data = request.get_json()
+    tipos = data.get("tipo", [])  # Espera lista de enteros
+    materiales = data.get("material", "")  # Espera string tipo "1,2"
 
-    # Convertir cadenas separadas por comas a listas
-    lista_tipos = [int(t.strip()) for t in tipos.split(',') if t.strip()]
+    # Filtrar primero por tipo y comprado
+    query = Producto.query
+    if tipos:
+        query = query.filter(Producto.tipo.in_(tipos))
+    productos = query.filter(Producto.comprado == False).all()
+
+    # Ahora filtrar por material en la lista resultante
     lista_materiales = [m.strip() for m in materiales.split(',') if m.strip()]
-
-    # Filtrar por tipo
-    productos = Producto.query.filter(Producto.tipo.in_(lista_tipos) and Producto.comprado == False).all()
-
-    # Filtrar por material (al menos uno debe estar en la cadena de la BD)
     productos_filtrados = []
-    for producto in productos:
-        materiales_producto = [mat.strip() for mat in producto.material.split(',')]
-        if any(mat in materiales_producto for mat in lista_materiales):
-            productos_filtrados.append(producto)
+    if lista_materiales:
+        for producto in productos:
+            materiales_producto = [mat.strip() for mat in producto.material.split(',')]
+            if any(mat in materiales_producto for mat in lista_materiales):
+                productos_filtrados.append(producto)
+    else:
+        productos_filtrados = productos
 
     if not productos_filtrados:
         return make_response(jsonify({
@@ -92,8 +92,6 @@ def listar_productos_por_tipo():
             "data": results
         }
         return make_response(jsonify(data), 200)
-
-
 
 #Detalle producto
 @producto_routes.route('/producto_detalle/', methods=['POST'])
@@ -129,13 +127,16 @@ def detalle_producto():
     id_vendedor = producto.id_vendedor
     payload = {'id_vendedor': id_vendedor}
     try:
-        response = requests.post('http://microservicio_usuario/usuarios', json=payload)
+        response = requests.post('http://127.0.0.1:5000/usuario_routes/obtener_username_vendedor', json=payload)
         if response.status_code == 200:
             usuario = response.json()
-            data['data']['nombre_vendedor'] = usuario['nombre']
+            # Extraer el nombre del vendedor del campo correcto
+            data['data']['nombre_vendedor'] = usuario['data']['username']
         else:
             data['data']['nombre_vendedor'] = 'Desconocido'
-    except requests.RequestException as e:
+    except requests.RequestException:
         data['data']['nombre_vendedor'] = 'Desconocido'
 
     return make_response(jsonify(data), 200)
+
+

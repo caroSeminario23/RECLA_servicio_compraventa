@@ -35,7 +35,7 @@ class ProductoDetalleSchema(ma.SQLAlchemyAutoSchema):
         model = Producto
         fields = (
             'id_producto',
-            'nombre_vendedor',
+            'id_vendedor',
             'descripcion',
             'tipo',
             'material'
