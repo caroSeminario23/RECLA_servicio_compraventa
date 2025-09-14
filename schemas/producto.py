@@ -40,6 +40,13 @@ class ProductoDetalleSchema(ma.SQLAlchemyAutoSchema):
             'tipo',
             'material'
         )
+class ProductoFiltradoSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Producto
+        fields = (
+            'tipo',
+            'material'
+        )
 
 
 
@@ -49,3 +56,9 @@ producto_registro_schemas = ProductoResgistroSchema(many=True)
 
 producto_consulta_schema = ProductoConsultaSchema()
 producto_consulta_schemas = ProductoConsultaSchema(many=True)
+
+producto_detalle_schema = ProductoDetalleSchema()
+producto_detalle_schemas = ProductoDetalleSchema(many=True)
+
+producto_filtrado_schema = ProductoFiltradoSchema()
+producto_filtrado_schemas = ProductoFiltradoSchema(many=True)

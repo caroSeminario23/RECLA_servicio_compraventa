@@ -7,6 +7,7 @@ from models.producto import Producto
 from schemas.producto import producto_registro_schema
 from schemas.producto import producto_consulta_schema
 from schemas.producto import producto_detalle_schema
+from schemas.producto import producto_filtrado_schema
 
 
 producto_routes = Blueprint("producto_routes", __name__)
@@ -57,12 +58,16 @@ def registro_producto():
 #listar productos por  tipo
 @producto_routes.route('/filtrar_productos/', methods=['POST'])
 def listar_productos_por_tipo():
-    tipos = request.json.get('tipo', '')
-    materiales = request.json.get('material', '')
+    try:
+        datos = producto_registro_schema.load(request.get_json())
+    except ValidationError as err:
+        return make_response(jsonify({"errors": err.messages, "status": 400}), 400)
+    tipos = datos["tipos"]
+    materiales = datos["materiales"]
 
     # Convertir cadenas separadas por comas a listas
     lista_tipos = [int(t.strip()) for t in tipos.split(',') if t.strip()]
-    lista_materiales = [m.strip().lower() for m in materiales.split(',') if m.strip()]
+    lista_materiales = [m.strip() for m in materiales.split(',') if m.strip()]
 
     # Filtrar por tipo
     productos = Producto.query.filter(Producto.tipo.in_(lista_tipos) and Producto.comprado == False).all()
@@ -70,7 +75,7 @@ def listar_productos_por_tipo():
     # Filtrar por material (al menos uno debe estar en la cadena de la BD)
     productos_filtrados = []
     for producto in productos:
-        materiales_producto = [mat.strip().lower() for mat in producto.material.split(',')]
+        materiales_producto = [mat.strip() for mat in producto.material.split(',')]
         if any(mat in materiales_producto for mat in lista_materiales):
             productos_filtrados.append(producto)
 
@@ -93,7 +98,13 @@ def listar_productos_por_tipo():
 #Detalle producto
 @producto_routes.route('/producto_detalle/', methods=['POST'])
 def detalle_producto():
-    id_producto = request.json.get('id_producto', '')
+    try:
+        datos = producto_detalle_schema.load(request.get_json())
+    except ValidationError as err:
+        return make_response(jsonify({"errors": err.messages, "status": 400}), 400)
+
+    id_producto = datos["id_producto"]
+
 
     producto = Producto.query.filter_by(id_producto=id_producto).first()
 
