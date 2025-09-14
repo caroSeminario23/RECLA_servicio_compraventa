@@ -51,6 +51,10 @@ class Producto(db.Model):
         db.String(7),
         nullable=True
     )
+    nombre = db.Column(
+        db.String(10),
+        nullable=True
+    )
 
     #Objeto
     def _init_(self,
@@ -61,7 +65,8 @@ class Producto(db.Model):
                 descripcion,
                 comprado,
                 tipo,
-                material):
+                material,
+                nombre):
         self.id_vendedor = id_vendedor
         self.url_foto = url_foto
         self.precio = precio
@@ -70,3 +75,4 @@ class Producto(db.Model):
         self.comprado = comprado
         self.tipo = tipo
         self.material = material
+        self.nombre = nombre

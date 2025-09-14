@@ -25,6 +25,7 @@ def registro_producto():
     comprado = datos["comprado"]
     tipo = datos["tipo"]
     material = datos["material"]
+    nombre = datos["nombre"]
 
     nuevo_producto = Producto(
         id_vendedor=id_vendedor,
@@ -34,7 +35,8 @@ def registro_producto():
         descripcion=descripcion,
         comprado=comprado,
         tipo=tipo,
-        material=material
+        material=material,
+        nombre=nombre
     )
     try:
         db.session.add(nuevo_producto)

@@ -17,7 +17,8 @@ class ProductoResgistroSchema(ma.SQLAlchemyAutoSchema):
             'descripcion',
             'comprado',
             'tipo',
-            'material'
+            'material',
+            'nombre'
         )
 class ProductoConsultaSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -26,7 +27,8 @@ class ProductoConsultaSchema(ma.SQLAlchemyAutoSchema):
             'id_producto',
             'url_foto',
             'precio',
-            'cantidad'
+            'cantidad',
+            'nombre'
         )        
 class ProductoDetalleSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
