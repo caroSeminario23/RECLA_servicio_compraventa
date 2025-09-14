@@ -127,13 +127,21 @@ def detalle_producto():
     id_vendedor = producto.id_vendedor
     payload = {'id_vendedor': id_vendedor}
     try:
-        response = requests.post('http://127.0.0.1:5000/usuario_routes/obtener_username_vendedor', json=payload)
-        if response.status_code == 200:
+        #response = requests.post('http://127.0.0.1:5000/usuario_routes/obtener_username_vendedor', json=payload)
+        response = {
+            "data": {
+                "username": "Esmeraldo"
+            },
+            "message": "Vendedor encontrado",
+            "status": 200
+        }
+        data['data']['nombre_vendedor'] = response['data']['username']
+        '''if response.status == 200:
             usuario = response.json()
             # Extraer el nombre del vendedor del campo correcto
             data['data']['nombre_vendedor'] = usuario['data']['username']
         else:
-            data['data']['nombre_vendedor'] = 'Desconocido'
+            data['data']['nombre_vendedor'] = 'Desconocido'''
     except requests.RequestException:
         data['data']['nombre_vendedor'] = 'Desconocido'
 
