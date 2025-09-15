@@ -13,6 +13,9 @@ from schemas.producto import producto_filtrado_schema
 
 
 producto_routes = Blueprint("producto_routes", __name__)
+
+
+
 #registro de producto
 @producto_routes.route('/registro_producto', methods=['POST'])
 def registro_producto():
@@ -55,6 +58,9 @@ def registro_producto():
     }
     return make_response(jsonify(data), 201)
 
+
+
+
 #listar productos por tipo y material
 @producto_routes.route('/filtrar_productos/', methods=['POST'])
 def listar_productos_por_tipo():
@@ -92,6 +98,35 @@ def listar_productos_por_tipo():
             "data": results
         }
         return make_response(jsonify(data), 200)
+
+
+##Producto consulta
+@producto_routes.route('/consulta_producto/', methods=['POST'])
+def consulta_producto():
+    try:
+        datos = producto_consulta_schema.load(request.get_json())
+    except ValidationError as err:
+        return make_response(jsonify({"errors": err.messages, "status": 400}), 400)
+
+    id_producto = datos["id_producto"]
+
+    producto = Producto.query.filter_by(id_producto=id_producto).first()
+
+    if not producto:
+        return make_response(jsonify({
+            "message": "Producto no encontrado",
+            "status": 404
+        }), 404)
+    else:
+        result = producto_consulta_schema.dump(producto)
+        data = {
+            "message": "Producto encontrado",
+            "status": 200,
+            "data": result
+        }
+        return make_response(jsonify(data), 200)
+
+
 
 #Detalle producto
 @producto_routes.route('/producto_detalle/', methods=['POST'])

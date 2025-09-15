@@ -27,6 +27,17 @@ Content-Type: application/json
 
 ###
 
+#CONSULTAR PRODUCTO
+POST http://127.0.0.1:5000/producto_routes/consulta_producto
+Content-Type: application/json
+
+{
+    "id_producto": 2
+}
+
+
+
+###
 # DETALLE DE PRODUCTO (incluye nombre del vendedor)
 POST http://127.0.0.1:5000/producto_routes/producto_detalle
 Content-Type: application/json
