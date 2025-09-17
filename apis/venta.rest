@@ -1,0 +1,10 @@
+##Registro de venta
+POST http://127.0.0.1:5000/venta_routes/registro_venta
+Content-Type: application/json
+
+{
+    "id_producto": 7,
+    "id_comprador": 3,
+    "id_vendedor": 1
+}
+###

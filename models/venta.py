@@ -4,8 +4,8 @@ class Venta(db.Model):
     __tablename__ = 'venta'
     id_producto = db.Column(
         db.Integer,
+        db.ForeignKey('producto.id_producto'),
         primary_key=True,
-        foreignKey='producto.id_producto',
         nullable=True
     )
 

@@ -35,7 +35,7 @@ def registro_venta():
             "status": 400
             }),400)
     ##requesta devuelve status_code
-    ##Servicio contador
+        ##Servicio contador
     id_comprador = nueva_venta.id_comprador
     id_vendedor = nueva_venta.id_vendedor
     payload = {
@@ -58,8 +58,4 @@ def registro_venta():
         "venta": venta_registro_schema.dump(nueva_venta)
     }
     return make_response(jsonify(data), 201)
-
-
-
-    
     

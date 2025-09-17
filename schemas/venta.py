@@ -7,6 +7,8 @@ from models.venta import Venta
 class VentaRegistroSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Venta
+        #load_instance = True
+        include_fk = True
         fields = (
             'id_producto',
             'id_comprador',
