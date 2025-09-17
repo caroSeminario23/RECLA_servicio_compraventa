@@ -1,7 +1,7 @@
 from utils.db import db
 
 class Producto(db.Model):
-    _tablename_ = 'producto'
+    __tablename__ = 'producto'
 
     #Características del producto
     id_producto = db.Column(

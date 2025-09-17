@@ -1,15 +1,16 @@
 from utils.db import db
 
-class Producto(db.Model):
-    _tablename_ = 'venta'
+class Venta(db.Model):
+    __tablename__ = 'venta'
     id_producto = db.Column(
         db.Integer,
         primary_key=True,
-        nulable=True
+        foreignKey='producto.id_producto',
+        nullable=True
     )
 
     id_comprador = db.Column(
         db.Integer,
         primary_key=True,
-        nulable=True
+        nullable=True
     )
