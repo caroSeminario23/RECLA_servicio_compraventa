@@ -9,7 +9,8 @@ class VentaRegistroSchema(ma.SQLAlchemyAutoSchema):
         model = Venta
         fields = (
             'id_producto',
-            'id_comprador'
+            'id_comprador',
+            'id_vendedor'
         )
 
 #Instancia de schemas

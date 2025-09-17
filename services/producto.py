@@ -132,7 +132,7 @@ def detalle_producto():
     #llamar a microservicio usuario para obtener nombre del vendedor
     #Se crea la trama para enviar por post
     #Se llama al servicio de usuario
-    
+    ##requesta devuelve status_code
 
     id_vendedor = producto.id_vendedor
     payload = {'id_vendedor': id_vendedor}

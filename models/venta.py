@@ -14,3 +14,7 @@ class Venta(db.Model):
         primary_key=True,
         nullable=True
     )
+    id_vendedor = db.Column(
+        db.Integer,
+        nullable=True
+    )
