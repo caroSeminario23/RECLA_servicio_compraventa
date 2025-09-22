@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 CORS(
     app, 
-    origins = ['localhost'], #dirección del front-end
+    origins = ['http://localhost:*', 'http://127.0.0.1:*'], #dirección del front-end
     methods = ['GET', 'POST', 'PUT', 'DELETE'],
     allow_headers = ['Content-Type', 'Authorization']
 )
