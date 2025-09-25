@@ -28,6 +28,7 @@ class ProductoConsultaSchema(ma.SQLAlchemyAutoSchema):
             'url_foto',
             'precio',
             'cantidad',
+            'tipo',
             'nombre'
         )        
 class ProductoDetalleSchema(ma.SQLAlchemyAutoSchema):
@@ -37,7 +38,7 @@ class ProductoDetalleSchema(ma.SQLAlchemyAutoSchema):
             'id_producto',
             'id_vendedor',
             'descripcion',
-            'tipo',
+            #'tipo',
             'material'
         )
 class ProductoFiltradoSchema(ma.SQLAlchemyAutoSchema):
