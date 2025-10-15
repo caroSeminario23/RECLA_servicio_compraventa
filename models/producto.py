@@ -23,7 +23,7 @@ class Producto(db.Model):
     )
 
     precio = db.Column(
-        db.Numeric(3, 2),
+        db.Numeric(5, 2),
         nullable=True
     )
 
