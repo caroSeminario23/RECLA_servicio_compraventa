@@ -1,0 +1,26 @@
+POST https://few-hats-flash.loca.lt/estatus_routes/estatus_perfil
+Content-Type: application/json
+
+{
+    "id_usuario": 7
+}
+###
+
+# OBTENER USERNAME DE VENDEDOR POR ID
+POST https://few-hats-flash.loca.lt/usuario_routes/obtener_username_vendedor
+Content-Type: application/json
+
+{
+    "id_usuario": 9
+}
+###
+
+# INICIAR SESION ECOAPRENDIZ
+POST https://few-hats-flash.loca.lt/usuario_routes/login_ecoaprendiz
+Content-Type: application/json
+
+{
+    "email": "isaproyectosfisi@gmail.com",
+    "contrasena": "123456"
+}
+###

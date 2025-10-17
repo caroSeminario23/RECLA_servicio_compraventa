@@ -3,7 +3,7 @@ POST http://127.0.0.1:5000/producto_routes/registro_producto
 Content-Type: application/json
 
 {
-    "id_vendedor": 1,
+    "id_vendedor": 5,
     "url_foto": "http://example.com/foto.jpg",
     "precio": 5.0,
     "cantidad": 10,
