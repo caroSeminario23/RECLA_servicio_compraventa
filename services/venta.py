@@ -1,11 +1,15 @@
 from flask import Blueprint, request, jsonify, make_response
 from marshmallow import ValidationError
-from werkzeug.security import check_password_hash
+#from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
 from utils.db import db
 from models.venta import Venta
 from schemas.venta import venta_registro_schema
 import requests
+import logging
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
 
 venta_routes = Blueprint("venta_routes", __name__)
 
@@ -49,9 +53,9 @@ def registro_venta():
             "status": 200
         }
         if response["status"] == 200:
-            print(response["message"])
+            logger.info(response["message"])
     except requests.RequestException as e:
-        print(f"Error en la solicitud: {e}")
+        logger.error(f"Error en la solicitud: {e}")
 
     data = {
         "message": "Venta registrada exitosamente",

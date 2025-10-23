@@ -11,10 +11,7 @@ from schemas.producto import producto_detalle_schema
 from schemas.producto import producto_filtrado_schema
 
 
-
 producto_routes = Blueprint("producto_routes", __name__)
-
-
 
 #registro de producto
 @producto_routes.route('/registro_producto', methods=['POST'])
