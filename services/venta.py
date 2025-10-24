@@ -2,23 +2,29 @@ from flask import Blueprint, request, jsonify, make_response
 from marshmallow import ValidationError
 #from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
+import requests
+import time
+
 from utils.db import db
+from utils.logger import get_logger
 from models.venta import Venta
 from schemas.venta import venta_registro_schema
-import requests
-import logging
 
 # Configurar el logger
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 venta_routes = Blueprint("venta_routes", __name__)
 
 #registro de venta
 @venta_routes.route('/registro_venta', methods=['POST'])
 def registro_venta():
+    inicio_tiempo = time.time()
+    
     try:
         datos = venta_registro_schema.load(request.get_json())
     except ValidationError as err:
+        tiempo_respuesta = time.time() - inicio_tiempo
+        logger.error(f"Error validación en registro_venta: {err.messages}. Tiempo: {tiempo_respuesta:.2f}s")
         return make_response(jsonify({"errors": err.messages, "status": 400}), 400)
 
     id_producto = datos["id_producto"]
@@ -33,7 +39,11 @@ def registro_venta():
     try:
         db.session.add(nueva_venta)
         db.session.commit()
+        logger.info(f"Venta registrada en BD exitosamente: {nueva_venta.id_venta}")
     except IntegrityError as err:
+        db.session.rollback()
+        tiempo_respuesta = time.time() - inicio_tiempo
+        logger.error(f"Error de integridad en registro_venta: {str(err.orig)}. Producto: {id_producto}, Comprador: {id_comprador}. Tiempo: {tiempo_respuesta:.2f}s")
         return make_response(jsonify({
             "message": str(err.orig),
             "status": 400
@@ -46,6 +56,9 @@ def registro_venta():
         "id_comprador": id_comprador,
         "id_vendedor": id_vendedor
     }
+
+    logger.info(f"Actualizando contadores para Comprador: {id_comprador}, Vendedor: {id_vendedor}")
+
     try:
         #response = requests.post('http://127.0.0.1:5000/venta_routes/obtener_contador', json=payload)
         response = {
@@ -53,10 +66,17 @@ def registro_venta():
             "status": 200
         }
         if response["status"] == 200:
-            logger.info(response["message"])
-    except requests.RequestException as e:
-        logger.error(f"Error en la solicitud: {e}")
+            logger.info(f"Contadores actualizados exitosamente - {response['message']}")
+        else:
+            logger.warning(f"Respuesta inesperada al actualizar contadores: {response['status']}")
 
+    except requests.RequestException as e:
+        tiempo_respuesta = time.time() - inicio_tiempo
+        logger.error(f"Error en solicitud de contador para venta {nueva_venta.id_venta}: {e}. Tiempo: {tiempo_respuesta:.2f}s")
+
+    tiempo_respuesta = time.time() - inicio_tiempo
+    logger.info(f"registro_venta exitoso - Venta: {nueva_venta.id_venta}. Tiempo: {tiempo_respuesta:.2f}s")
+    
     data = {
         "message": "Venta registrada exitosamente",
         "venta": venta_registro_schema.dump(nueva_venta)
