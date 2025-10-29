@@ -7,6 +7,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm.attributes import flag_modified
 import datetime
 
+
 chat_routes = Blueprint('chat_routes', __name__)
 
 # Ruta para obtener historial (POST)
@@ -82,10 +83,11 @@ def agregar_mensaje(id_usuario_1, id_usuario_2, mensaje):
     chat = chat_entre_2_usuarios(id_usuario_1, id_usuario_2)
     
     # 2. Define la estructura del nuevo mensaje
+    hora_peruana = datetime.datetime.utcnow() - datetime.timedelta(hours=5)
     new_message_data = {
         "usuario_id": id_usuario_1,
         "mensaje": mensaje,
-        "fecha_hora": datetime.datetime.utcnow().isoformat()
+        "fecha_hora": hora_peruana.strftime("%Y-%m-%d %H:%M")
     }
     
     try:
