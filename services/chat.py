@@ -1,6 +1,4 @@
 from flask import Blueprint, request, jsonify, make_response
-# from . import chat_service  <-- 1. ELIMINAMOS ESTA LÍNEA
-#from schemas.chat import chat_mensaje_schema
 from utils.db import db
 from models.chat import Chat
 from sqlalchemy import or_
@@ -43,6 +41,12 @@ def enviar_mensaje():
             "message": "Datos incompletos (id_usuario_1, id_usuario_2, mensaje)",
             "status": 400
         }))
+    
+    if id_usuario_1 == id_usuario_2:
+        return make_response(jsonify({
+            "message": "Los IDs de usuario no pueden ser iguales",
+            "status": 400
+        }))
 
     # 2. Llama a la función local directamente
     new_message = agregar_mensaje(id_usuario_1, id_usuario_2, mensaje)
@@ -60,14 +64,10 @@ def enviar_mensaje():
             "status": 500
         })) 
     
-
-
-# --- Funciones del Servicio (Definidas en el mismo archivo) ---
+#Obtener mensajes entre dos usuarios
 
 def obtener_mensaje_entre_usuarios(id_usuario_1, id_usuario_2):
-    """
-    Obtiene la lista de mensajes entre dos usuarios.
-    """
+
     chat = chat_entre_2_usuarios(id_usuario_1, id_usuario_2)
     
     if chat and chat.mensajes:
@@ -75,11 +75,8 @@ def obtener_mensaje_entre_usuarios(id_usuario_1, id_usuario_2):
     else:
         return []
 
+#Agregar mensaje entre dos usuarios o crear nuevo chat
 def agregar_mensaje(id_usuario_1, id_usuario_2, mensaje):
-    """
-    Agrega un nuevo mensaje a un chat.
-    Si el chat no existe, lo crea.
-    """
     
     # 1. Busca la sesión de chat existente
     chat = chat_entre_2_usuarios(id_usuario_1, id_usuario_2)
@@ -120,16 +117,9 @@ def agregar_mensaje(id_usuario_1, id_usuario_2, mensaje):
             "message": f"Error al agregar mensaje: {e}",
             "status": 500
         }))
-        #print(f"Error al agregar mensaje: {e}")
-        #return None
 
-# --- Función Auxiliar (Definida en el mismo archivo) ---
-
+# Función auxiliar para encontrar un chat entre dos usuarios
 def chat_entre_2_usuarios(id_usuario_1, id_usuario_2):
-    """
-    Función auxiliar para encontrar un chat entre dos usuarios,
-    independientemente de quién es id_usuario_1 o id_usuario_2.
-    """
     chat_session = Chat.query.filter(
         or_(
             (Chat.id_usuario_1 == id_usuario_1) & (Chat.id_usuario_2 == id_usuario_2),
@@ -139,7 +129,8 @@ def chat_entre_2_usuarios(id_usuario_1, id_usuario_2):
     
     return chat_session
 
-@chat_routes.route('/ultimo_mensaje', methods=['POST'])
+# Ruta para obtener el último mensaje de cada conversación de un usuario
+@chat_routes.route('/mis_conversaciones', methods=['POST'])
 def obtener_ultimo_mensaje():
     data = request.get_json()
     id_usuario = data.get('id_usuario')
