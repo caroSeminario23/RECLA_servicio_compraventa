@@ -48,3 +48,12 @@ Content-Type: application/json
 
 ###
 
+
+# LISTAR PRODUCTOS DE UN VENDEDOR
+POST http://127.0.0.1:5002/producto_routes/listar_productos_vendedor
+Content-Type: application/json
+
+{
+    "id_vendedor": 7
+}
+###

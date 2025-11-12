@@ -8,7 +8,8 @@ import time
 from utils.logger import get_logger
 from utils.servicios_externos import VERIFICADOR_ACTIVIDAD_DIARIA, VERIFICADOR_EXPERIENCIA_CONTADORES
 from models.producto import Producto
-from schemas.producto import producto_registro_schema
+from schemas.producto import (producto_registro_schema,
+                              producto_registro_schemas)
 from schemas.producto import producto_consulta_schema
 from schemas.producto import producto_detalle_schema
 #from schemas.producto import producto_filtrado_schema
@@ -281,3 +282,58 @@ def consulta_producto():
             "data": result
         }
         return make_response(jsonify(data), 200)
+    
+
+# ============================================
+# Mostrar productos de un vendedor específico
+@producto_routes.route('/listar_productos_vendedor', methods=['POST'])
+def listar_productos_vendedor():
+    inicio_tiempo = time.time()
+    try:
+        # Validar que existe el JSON y el campo
+        field_required = ['id_vendedor']
+        if not request.json or not all(field in request.json for field in field_required):
+            return make_response(jsonify({
+                'status': 400,
+                'message': 'Faltan campos requeridos'
+            }), 400)
+
+        id_vendedor = request.json.get('id_vendedor')
+
+        # Validar que no sea None o vacío
+        if id_vendedor is None or str(id_vendedor).strip() == '':
+            return make_response(jsonify({
+                'status': 400,
+                'message': 'id_vendedor no puede ser nulo o vacío'
+            }), 400)
+        
+        productos = Producto.query.filter_by(id_vendedor=id_vendedor, comprado=False).all()
+
+        if not productos:
+            tiempo_respuesta = time.time() - inicio_tiempo
+            logger.warning(f"No se encontraron productos para vendedor: {id_vendedor}. Tiempo: {tiempo_respuesta:.2f}s")
+            return make_response(jsonify({
+                "message": "No se encontraron productos",
+                "status": 404
+            }), 404)
+        
+        resultado = producto_registro_schemas.dump(productos, many=True)
+
+        tiempo_respuesta = time.time() - inicio_tiempo
+        logger.info(f"listar_productos_vendedor exitosa para vendedor: {id_vendedor}. Tiempo: {tiempo_respuesta:.2f}s")
+        data = {
+            "message": "Productos encontrados",
+            "status": 200,
+            "data": resultado
+        }
+
+        return make_response(jsonify(data), 200)
+        
+    except Exception as e:
+        tiempo_respuesta = time.time() - inicio_tiempo
+        logger.error(f"Error en listar_productos_vendedor: {e}. Tiempo: {tiempo_respuesta:.2f}s")
+        return make_response(jsonify({
+            'status': 500,
+            'message': 'Error procesando la solicitud',
+            'error': str(e)
+        }), 500)
