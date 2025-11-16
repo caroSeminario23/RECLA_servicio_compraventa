@@ -24,7 +24,7 @@ def registro_venta():
         datos = venta_registro_schema.load(request.get_json())
     except ValidationError as err:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error validación en registro_venta: {err.messages}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error validación en registro_venta: {err.messages}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({"errors": err.messages, "status": 400}), 400)
 
     id_producto = datos["id_producto"]
@@ -43,7 +43,7 @@ def registro_venta():
     except IntegrityError as err:
         db.session.rollback()
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error de integridad en registro_venta: {str(err.orig)}. Producto: {id_producto}, Comprador: {id_comprador}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error de integridad en registro_venta: {str(err.orig)}. Producto: {id_producto}, Comprador: {id_comprador}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({
             "message": str(err.orig),
             "status": 400
@@ -72,10 +72,10 @@ def registro_venta():
 
     except requests.RequestException as e:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error en solicitud de contador para venta {nueva_venta.id_venta}: {e}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error en solicitud de contador para venta {nueva_venta.id_venta}: {e}. Tiempo: {tiempo_respuesta:.3f}s")
 
     tiempo_respuesta = time.time() - inicio_tiempo
-    logger.info(f"registro_venta exitoso - Venta: {nueva_venta.id_venta}. Tiempo: {tiempo_respuesta:.2f}s")
+    logger.info(f"registro_venta exitoso - Venta: {nueva_venta.id_venta}. Tiempo: {tiempo_respuesta:.3f}s")
     
     data = {
         "message": "Venta registrada exitosamente",

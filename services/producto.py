@@ -1,12 +1,14 @@
+from random import random
 from flask import Blueprint, request, jsonify, make_response
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 from utils.db import db
+from utils.supabase_client import supabase
 import requests
 import time
 
 from utils.logger import get_logger
-from utils.servicios_externos import VERIFICADOR_ACTIVIDAD_DIARIA, VERIFICADOR_EXPERIENCIA_CONTADORES
+from utils.servicios_externos import VERIFICADOR_ACTIVIDAD_DIARIA, VERIFICADOR_EXPERIENCIA_CONTADORES, AUMENTAR_CONTADORES
 from models.producto import Producto
 from schemas.producto import (producto_registro_schema,
                               producto_registro_schemas)
@@ -28,7 +30,7 @@ def registro_producto():
         datos = producto_registro_schema.load(request.get_json())
     except ValidationError as err:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error validación en registro_producto: {err.messages}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error validación en registro_producto: {err.messages}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({"errors": err.messages, "status": 400}), 400)
     
     id_vendedor = datos["id_vendedor"]
@@ -58,11 +60,11 @@ def registro_producto():
         db.session.add(nuevo_producto)
         db.session.commit()
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.info(f"Producto registrado exitosamente: {nuevo_producto.id_producto}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.info(f"Producto registrado exitosamente: {nuevo_producto.id_producto}. Tiempo: {tiempo_respuesta:.3f}s")
     except IntegrityError as err:
         db.session.rollback()
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error de integridad en registro_producto: {str(err.orig)}. Vendedor: {id_vendedor}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error de integridad en registro_producto: {str(err.orig)}. Vendedor: {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({
             "message": str(err.orig),
             "status": 400
@@ -77,18 +79,18 @@ def registro_producto():
 
     if respuesta_servicio.status_code != 200:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error al registrar actividad diaria para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error al registrar actividad diaria para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({
             "status": respuesta_servicio.status_code,
             "message": "Error al registrar actividad diaria"
         }), respuesta_servicio.status_code)
     
     tiempo_respuesta = time.time() - inicio_tiempo
-    logger.info(f"Actividad diaria registrada exitosamente para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.2f}s")
+    logger.info(f"Actividad diaria registrada exitosamente para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
 
 
     # Llamar al servicio para que aumente los puntos y contadores del vendedor
-    servicio_experiencia_contadores = VERIFICADOR_EXPERIENCIA_CONTADORES
+    servicio_experiencia_contadores = AUMENTAR_CONTADORES
 
     respuesta_servicio2 = requests.post(servicio_experiencia_contadores, json={
         "id_usuario": id_vendedor,
@@ -97,14 +99,14 @@ def registro_producto():
 
     if respuesta_servicio2.status_code != 200:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error al actualizar experiencia y contadores para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error al actualizar experiencia y contadores para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({
             "status": respuesta_servicio2.status_code,
             "message": "Error al actualizar experiencia y contadores"
         }), respuesta_servicio2.status_code)
     
     tiempo_respuesta = time.time() - inicio_tiempo
-    logger.info(f"Experiencia y contadores actualizados exitosamente para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.2f}s")
+    logger.info(f"Experiencia y contadores actualizados exitosamente para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
 
     data = {
         "message": "Producto registrado exitosamente",
@@ -147,7 +149,7 @@ def listar_productos_por_tipo():
 
         if not productos_filtrados:
             tiempo_respuesta = time.time() - inicio_tiempo
-            logger.warning(f"No se encontraron productos con criterios - tipos: {tipos}, materiales: {materiales}. Tiempo: {tiempo_respuesta:.2f}s")
+            logger.warning(f"No se encontraron productos con criterios - tipos: {tipos}, materiales: {materiales}. Tiempo: {tiempo_respuesta:.3f}s")
             return make_response(jsonify({
                 "message": "No se encontraron productos con esos criterios",
                 "status": 404
@@ -155,7 +157,7 @@ def listar_productos_por_tipo():
         else:
             results = producto_consulta_schema.dump(productos_filtrados, many=True)
             tiempo_respuesta = time.time() - inicio_tiempo
-            logger.info(f"Filtrado exitoso - productos encontrados: {len(productos_filtrados)}. Tiempo: {tiempo_respuesta:.2f}s")
+            logger.info(f"Filtrado exitoso - productos encontrados: {len(productos_filtrados)}. Tiempo: {tiempo_respuesta:.3f}s")
             data = {
                 "message": "Productos encontrados",
                 "status": 200,
@@ -165,7 +167,7 @@ def listar_productos_por_tipo():
     
     except Exception as err:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error en listar_productos_por_tipo: {err}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error en listar_productos_por_tipo: {err}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({
             'status': 500,
             'message': 'Error procesando la solicitud'
@@ -181,7 +183,7 @@ def detalle_producto():
         datos = producto_detalle_schema.load(request.get_json())
     except ValidationError as err:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error validación en detalle_producto: {err.messages}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error validación en detalle_producto: {err.messages}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({"errors": err.messages, "status": 400}), 400)
 
     id_producto = datos["id_producto"]
@@ -191,7 +193,7 @@ def detalle_producto():
 
     if not producto:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.warning(f"Producto no encontrado: {id_producto}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.warning(f"Producto no encontrado: {id_producto}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({
             "message": "Producto no encontrado",
             "status": 404
@@ -244,7 +246,7 @@ def detalle_producto():
         data['data']['nombre_vendedor'] = 'Desconocido'
         
     tiempo_respuesta = time.time() - inicio_tiempo
-    logger.info(f"detalle_producto exitoso para producto {id_producto}. Tiempo: {tiempo_respuesta:.2f}s")
+    logger.info(f"detalle_producto exitoso para producto {id_producto}. Tiempo: {tiempo_respuesta:.3f}s")
     return make_response(jsonify(data), 200)
 
 
@@ -257,7 +259,7 @@ def consulta_producto():
         datos = producto_consulta_schema.load(request.get_json())
     except ValidationError as err:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error validación en consulta_producto: {err.messages}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error validación en consulta_producto: {err.messages}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({"errors": err.messages, "status": 400}), 400)
 
     id_producto = datos["id_producto"]
@@ -267,7 +269,7 @@ def consulta_producto():
 
     if not producto:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.warning(f"Producto no encontrado en consulta: {id_producto}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.warning(f"Producto no encontrado en consulta: {id_producto}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({
             "message": "Producto no encontrado",
             "status": 404
@@ -275,7 +277,7 @@ def consulta_producto():
     else:
         result = producto_consulta_schema.dump(producto)
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.info(f"consulta_producto exitosa para producto {id_producto}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.info(f"consulta_producto exitosa para producto {id_producto}. Tiempo: {tiempo_respuesta:.3f}s")
         data = {
             "message": "Producto encontrado",
             "status": 200,
@@ -311,7 +313,7 @@ def listar_productos_vendedor():
 
         if not productos:
             tiempo_respuesta = time.time() - inicio_tiempo
-            logger.warning(f"No se encontraron productos para vendedor: {id_vendedor}. Tiempo: {tiempo_respuesta:.2f}s")
+            logger.warning(f"No se encontraron productos para vendedor: {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
             return make_response(jsonify({
                 "message": "No se encontraron productos",
                 "status": 404
@@ -320,7 +322,7 @@ def listar_productos_vendedor():
         resultado = producto_registro_schemas.dump(productos, many=True)
 
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.info(f"listar_productos_vendedor exitosa para vendedor: {id_vendedor}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.info(f"listar_productos_vendedor exitosa para vendedor: {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
         data = {
             "message": "Productos encontrados",
             "status": 200,
@@ -331,9 +333,70 @@ def listar_productos_vendedor():
         
     except Exception as e:
         tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error en listar_productos_vendedor: {e}. Tiempo: {tiempo_respuesta:.2f}s")
+        logger.error(f"Error en listar_productos_vendedor: {e}. Tiempo: {tiempo_respuesta:.3f}s")
         return make_response(jsonify({
             'status': 500,
             'message': 'Error procesando la solicitud',
             'error': str(e)
         }), 500)
+    
+
+# CARGAR IMAGEN EN SUPABASE
+@producto_routes.route('/cargar_imagen', methods=['POST'])
+def cargar_imagen():
+    inicio_tiempo = time.time()
+    try:
+        required_fields = ['imagen', 'id_usuario', 'nombre_producto']
+        if not request.json or not all(field in request.json for field in required_fields):
+        #if 'imagen' not in request.files:
+            tiempo_respuesta = time.time() - inicio_tiempo
+            logger.error(f"Falta el archivo de imagen en la solicitud. Tiempo: {tiempo_respuesta:.3f}s")
+            return make_response(jsonify({
+                'status': 400,
+                'message': 'Falta el archivo de imagen'
+            }), 400)
+
+        imagen = request.files['imagen']
+        id_usuario = request.json['id_usuario']
+        nombre_producto = request.json['nombre_producto']
+        #nombre_archivo = imagen.filename
+
+        id_adicional = random()
+
+        cadena_nombre = f"{id_usuario}_{nombre_producto}_{id_adicional}"
+
+        # Simulación de URL de la imagen cargada
+        url_imagen = subir_imagen_a_supabase(imagen, cadena_nombre)
+
+        tiempo_respuesta = time.time() - inicio_tiempo
+        logger.info(f"Imagen cargada exitosamente. Tiempo: {tiempo_respuesta:.3f}s")
+        data = {
+            "message": "Imagen cargada exitosamente",
+            "status": 200,
+            "data": url_imagen
+        }
+
+        return make_response(jsonify(data), 200)
+
+    except Exception as e:
+        tiempo_respuesta = time.time() - inicio_tiempo
+        logger.error(f"Error al cargar imagen: {e}. Tiempo: {tiempo_respuesta:.3f}s")
+        return make_response(jsonify({
+            'status': 500,
+            'message': 'Error al cargar la imagen',
+            'error': str(e)
+        }), 500)
+    
+
+def subir_imagen_a_supabase(imagen, cadena_nombre):
+    with open(imagen, "rb") as webp_file:
+        bucket_name = "recla-images"
+        carpeta_supabase = f"productos_usuarios/{cadena_nombre}"
+
+        llamado_carpeta = supabase.storage.from_(bucket_name)
+
+        llamado_carpeta.upload(carpeta_supabase, webp_file, {'cacheControl': '3600', 'upsert': 'true'})
+    webp_url = llamado_carpeta.get_public_url(f"productos_usuarios/{cadena_nombre}")
+    logger.info(f"Imagen cargada en Supabase: {webp_url}")
+
+    return webp_url

@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 class Chat(db.Model):
     __tablename__ = 'chat'
 
-    id = db.Column(
+    id_chat = db.Column(
         db.Integer,
         primary_key=True,
         autoincrement=True
