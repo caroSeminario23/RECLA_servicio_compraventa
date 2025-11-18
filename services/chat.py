@@ -5,6 +5,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm.attributes import flag_modified
 import datetime
 import time
+import requests
 from utils.logger import get_logger
 logger = get_logger(__name__)
 
@@ -201,14 +202,29 @@ def obtener_ultimo_mensaje():
 
         # Obtiene el último mensaje de cada chat
         ultimos_mensajes = []
+        #Otener nombre del vendedor
+        USER_SERVICE_URL = 'http://127.0.0.1:5000/usuario_routes/obtener_username_vendedor'
         for chat in chats:
             if chat.mensajes:
+                id_receptor = chat.id_usuario_2 if chat.id_usuario_1 == id_usuario else chat.id_usuario_1
+                nombre_usuario = "Usuario Desconocido"
+                try:
+                    payload = {'id_vendedor': id_receptor}
+                    response = requests.post(USER_SERVICE_URL, json=payload,timeout=2)
+                    if response.status_code == 200:
+                        nombre_usuario = response.json()['data']['username']
+                    else:
+                        logger.warning(f"No se pudo obtener el nombre de usuario para el ID: {id_receptor}. Código de estado: {response.status_code}")
+                except Exception as e:
+                    logger.error(f"Error al conectar con el servicio de usuarios para el ID: {id_receptor}. Error: {e}")
                 ultimo_mensaje = chat.mensajes[-1]  # Último mensaje en el JSONB
                 ultimos_mensajes.append({
                     "id_chat": chat.id,
                     "id_usuario_1": chat.id_usuario_1,
                     "id_usuario_2": chat.id_usuario_2,
-                    "ultimo_mensaje": ultimo_mensaje
+                    "ultimo_mensaje": ultimo_mensaje,
+                    "id_receptor": id_receptor,
+                    "nombre_vendedor": nombre_usuario
                 })
         tiempo_respuesta = time.time() - inicio_tiempo
         logger.info(f"Últimos mensajes obtenidos para Usuario: {id_usuario}. Tiempo: {tiempo_respuesta:.2f}s")

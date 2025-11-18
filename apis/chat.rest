@@ -20,7 +20,7 @@ Content-Type: application/json
 
 ###
 # Obtener últimos mensajes de todos los chats de un usuario
-POST http://127.0.0.1:5000/chat_routes/mis_conversaciones
+POST http://127.0.0.1:5002/chat_routes/mis_conversaciones
 Content-Type: application/json
 
 {
