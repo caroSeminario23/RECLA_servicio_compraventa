@@ -4,11 +4,13 @@ from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 from utils.db import db
 from utils.supabase_client import supabase
-import requests
-import time
+from concurrent.futures import ThreadPoolExecutor
+import requests, time
 
 from utils.logger import get_logger
-from utils.servicios_externos import VERIFICADOR_ACTIVIDAD_DIARIA, VERIFICADOR_EXPERIENCIA_CONTADORES, AUMENTAR_CONTADORES
+from utils.servicios_externos import (VERIFICADOR_ACTIVIDAD_DIARIA,
+                                      AUMENTAR_CONTADOR,
+                                      AUMENTAR_EXPERIENCIA)
 from models.producto import Producto
 from schemas.producto import (producto_registro_schema,
                               producto_registro_schemas)
@@ -21,6 +23,46 @@ from schemas.producto import producto_detalle_schema
 logger = get_logger(__name__)
 
 producto_routes = Blueprint("producto_routes", __name__)
+
+
+# REGISTRAR ACTIVIDAD DIARIA EN BACKGROUND
+def _registrar_actividad_diaria(id_usuario):
+    """Ejecuta en background sin bloquear la respuesta"""
+    try:
+        respuesta = requests.post(VERIFICADOR_ACTIVIDAD_DIARIA, 
+            json={'id_usuario': id_usuario},
+            timeout=3)
+        if respuesta.status_code != 201:
+            logger.error(f"Error al registrar actividad diaria: {respuesta.text}")
+    except Exception as e:
+        logger.error(f"Error en registrar actividad diaria background task: {e}")
+
+
+# AUMENTAR CONTADOR DE COMPRA O VENTA EN BACKGROUND
+def _aumentar_contador(id_usuario, motivo):
+    """Ejecuta en background sin bloquear la respuesta"""
+    try:
+        respuesta = requests.post(AUMENTAR_CONTADOR, 
+            json={'id_usuario': id_usuario, 'motivo': motivo},
+            timeout=3)
+        if respuesta.status_code != 200:
+            logger.error(f"Error al aumentar contador: {respuesta.text}")
+    except Exception as e:
+        logger.error(f"Error en aumentar contador background task: {e}")
+
+
+# AUMENTAR EXPERIENCIA DE COMPRA O VENTA EN BACKGROUND
+def _aumentar_experiencia(id_usuario, motivo):
+    """Ejecuta en background sin bloquear la respuesta"""
+    try:
+        respuesta = requests.post(AUMENTAR_EXPERIENCIA, 
+            json={'id_usuario': id_usuario, 'motivo': motivo},
+            timeout=3)
+        if respuesta.status_code != 200:
+            logger.error(f"Error al aumentar experiencia: {respuesta.text}")
+    except Exception as e:
+        logger.error(f"Error en aumentar experiencia background task: {e}")
+
 
 #registro de producto
 @producto_routes.route('/registro_producto', methods=['POST'])
@@ -70,43 +112,27 @@ def registro_producto():
             "status": 400
             }),400)
     
-    # Llamar al servicio para que registre la actividad diaria
-    servicio_actividad_diaria = VERIFICADOR_ACTIVIDAD_DIARIA
-
-    respuesta_servicio = requests.post(servicio_actividad_diaria, json={
-        "id_usuario": id_vendedor,
-    })
-
-    if respuesta_servicio.status_code != 200:
-        tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error al registrar actividad diaria para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
-        return make_response(jsonify({
-            "status": respuesta_servicio.status_code,
-            "message": "Error al registrar actividad diaria"
-        }), respuesta_servicio.status_code)
+    # Ejecutar verificacion de actividad diaria en background (NO bloquea)
+    executor = ThreadPoolExecutor(max_workers=1)
+    executor.submit(_registrar_actividad_diaria, id_vendedor)
     
     tiempo_respuesta = time.time() - inicio_tiempo
     logger.info(f"Actividad diaria registrada exitosamente para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
 
 
-    # Llamar al servicio para que aumente los puntos y contadores del vendedor
-    servicio_experiencia_contadores = AUMENTAR_CONTADORES
-
-    respuesta_servicio2 = requests.post(servicio_experiencia_contadores, json={
-        "id_usuario": id_vendedor,
-        "motivo": 1
-    })
-
-    if respuesta_servicio2.status_code != 200:
-        tiempo_respuesta = time.time() - inicio_tiempo
-        logger.error(f"Error al actualizar experiencia y contadores para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
-        return make_response(jsonify({
-            "status": respuesta_servicio2.status_code,
-            "message": "Error al actualizar experiencia y contadores"
-        }), respuesta_servicio2.status_code)
+    # Ejecutar el aumento del contador de venta en background (NO bloquea)
+    executor = ThreadPoolExecutor(max_workers=1)
+    executor.submit(_aumentar_contador, id_vendedor, 1)
     
     tiempo_respuesta = time.time() - inicio_tiempo
     logger.info(f"Experiencia y contadores actualizados exitosamente para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
+
+    # Ejecutar el aumento del contador de venta en background (NO bloquea)
+    executor = ThreadPoolExecutor(max_workers=1)
+    executor.submit(_aumentar_experiencia, id_vendedor, 1)
+
+    tiempo_respuesta = time.time() - inicio_tiempo
+    logger.info(f"Contador de ventas aumentado exitosamente para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
 
     data = {
         "message": "Producto registrado exitosamente",

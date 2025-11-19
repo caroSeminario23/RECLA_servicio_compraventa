@@ -1,23 +1,23 @@
 #REGISTRO PRODUCTO
-POST http://127.0.0.1:5000/producto_routes/registro_producto
+POST http://127.0.0.1:5002/producto_routes/registro_producto
 Content-Type: application/json
 
 {
-    "id_vendedor": 5,
-    "url_foto": "http://example.com/foto.jpg",
-    "precio": 5.0,
+    "id_vendedor": 9,
+    "url_foto": "https://manualidades.es/wp-content/uploads/2021/10/arbol-de-navidad-reciclado-de-50-ideas-de-arboles-de-navidad-con-materiales-reciclados.jpg",
+    "precio": 15.0,
     "cantidad": 10,
-    "descripcion": "Producto de prueba",
+    "descripcion": "Árbol de Navidad ecológico hecho con botellas plásticas recicladas.",
     "comprado": false,
     "tipo": 1,
     "material": "1,2",
-    "nombre": "Mesa"
+    "nombre": "Árbol Navidad"
 }
 ###
 
 
 #FILTRAR PRODUCTOS POR TIPO Y MATERIAL
-POST http://127.0.0.1:5000/producto_routes/filtrar_productos
+POST http://127.0.0.1:5002/producto_routes/filtrar_productos
 Content-Type: application/json
 
 {
@@ -28,7 +28,7 @@ Content-Type: application/json
 ###
 
 #CONSULTAR PRODUCTO
-POST http://127.0.0.1:5000/producto_routes/consulta_producto
+POST http://127.0.0.1:5002/producto_routes/consulta_producto
 Content-Type: application/json
 
 {
@@ -39,7 +39,7 @@ Content-Type: application/json
 
 ###
 # DETALLE DE PRODUCTO (incluye nombre del vendedor)
-POST http://127.0.0.1:5000/producto_routes/producto_detalle
+POST http://127.0.0.1:5002/producto_routes/producto_detalle
 Content-Type: application/json
 
 {

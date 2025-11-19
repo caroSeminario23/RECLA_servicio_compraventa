@@ -52,7 +52,7 @@ class Producto(db.Model):
         nullable=True
     )
     nombre = db.Column(
-        db.String(10),
+        db.String(15),
         nullable=True
     )
 
