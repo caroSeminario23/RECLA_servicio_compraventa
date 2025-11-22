@@ -8,7 +8,8 @@ class ChatMensajeSchema(ma.SQLAlchemySchema):
         fields = (
             'id_usuario_1',
             'id_usuario_2',
-            'mensajes'
+            'mensajes',
+            'id_producto'
         )
 
 #Instancia de schemas

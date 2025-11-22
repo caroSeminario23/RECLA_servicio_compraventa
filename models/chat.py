@@ -25,12 +25,19 @@ class Chat(db.Model):
         nullable=True
     )
 
+    id_producto = db.Column(
+        db.Integer,
+        nullable=True
+    )
+
     #Objeto
     def __init__(
             self,
             id_usuario_1,
             id_usuario_2,
-            mensajes):
+            mensajes,
+            id_producto):
         self.id_usuario_1 = id_usuario_1
         self.id_usuario_2 = id_usuario_2
         self.mensajes = mensajes
+        self.id_producto = id_producto

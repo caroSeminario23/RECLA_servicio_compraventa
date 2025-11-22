@@ -5,6 +5,8 @@ from sqlalchemy.exc import IntegrityError
 from utils.db import db
 from utils.supabase_client import supabase
 from concurrent.futures import ThreadPoolExecutor
+from PIL import Image
+from io import BytesIO
 import requests, time
 
 from utils.logger import get_logger
@@ -372,23 +374,30 @@ def listar_productos_vendedor():
 def cargar_imagen():
     inicio_tiempo = time.time()
     try:
-        required_fields = ['imagen', 'id_usuario', 'nombre_producto']
-        if not request.json or not all(field in request.json for field in required_fields):
-        #if 'imagen' not in request.files:
+        # Validar que exista el archivo y los campos JSON
+        if 'imagen' not in request.files:
             tiempo_respuesta = time.time() - inicio_tiempo
             logger.error(f"Falta el archivo de imagen en la solicitud. Tiempo: {tiempo_respuesta:.3f}s")
             return make_response(jsonify({
                 'status': 400,
                 'message': 'Falta el archivo de imagen'
             }), 400)
+        
+
+        required_fields = ['id_usuario', 'nombre_producto']
+        if not request.form or not all(field in request.form for field in required_fields):
+            tiempo_respuesta = time.time() - inicio_tiempo
+            logger.error(f"Faltan campos requeridos en la solicitud. Tiempo: {tiempo_respuesta:.3f}s")
+            return make_response(jsonify({
+                'status': 400,
+                'message': 'Faltan campos requeridos: id_usuario, nombre_producto'
+            }), 400)
 
         imagen = request.files['imagen']
-        id_usuario = request.json['id_usuario']
-        nombre_producto = request.json['nombre_producto']
-        #nombre_archivo = imagen.filename
+        id_usuario = request.form['id_usuario']
+        nombre_producto = request.form['nombre_producto']
 
         id_adicional = random()
-
         cadena_nombre = f"{id_usuario}_{nombre_producto}_{id_adicional}"
 
         # Simulación de URL de la imagen cargada
@@ -414,15 +423,57 @@ def cargar_imagen():
         }), 500)
     
 
-def subir_imagen_a_supabase(imagen, cadena_nombre):
-    with open(imagen, "rb") as webp_file:
+
+def subir_imagen_a_supabase(imagen, cadena_nombre, porcentaje_reduccion=50):
+    """
+    Redimensiona la imagen por porcentaje, la convierte a WebP y la sube a Supabase
+    
+    Args:
+        imagen: Archivo de imagen cargado
+        cadena_nombre: Nombre para guardar en Supabase
+        porcentaje_reduccion: Porcentaje del tamaño original (default 50%)
+    """
+    try:
+        # Leer la imagen del archivo cargado
+        imagen_pil = Image.open(imagen)
+        
+        # Calcular nuevas dimensiones por porcentaje
+        factor = porcentaje_reduccion / 100
+        nuevo_ancho = int(imagen_pil.width * factor)
+        nuevo_alto = int(imagen_pil.height * factor)
+        
+        # Redimensionar manteniendo la proporción
+        imagen_pil = imagen_pil.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
+        
+        logger.info(f"Imagen redimensionada al {porcentaje_reduccion}% - Dimensiones: {nuevo_ancho}x{nuevo_alto}")
+        
+        # Convertir a RGB si tiene transparencia (RGBA)
+        if imagen_pil.mode in ('RGBA', 'LA', 'P'):
+            fondo = Image.new('RGB', imagen_pil.size, (255, 255, 255))
+            fondo.paste(imagen_pil, mask=imagen_pil.split()[-1] if imagen_pil.mode == 'RGBA' else None)
+            imagen_pil = fondo
+        
+        # Guardar en BytesIO como WebP
+        buffer_webp = BytesIO()
+        imagen_pil.save(buffer_webp, format='WEBP', quality=85, optimize=True)
+        buffer_webp.seek(0)
+        
+        # Subir a Supabase
         bucket_name = "recla-images"
-        carpeta_supabase = f"productos_usuarios/{cadena_nombre}"
-
+        carpeta_supabase = f"productos_usuarios/{cadena_nombre}.webp"
+        
         llamado_carpeta = supabase.storage.from_(bucket_name)
-
-        llamado_carpeta.upload(carpeta_supabase, webp_file, {'cacheControl': '3600', 'upsert': 'true'})
-    webp_url = llamado_carpeta.get_public_url(f"productos_usuarios/{cadena_nombre}")
-    logger.info(f"Imagen cargada en Supabase: {webp_url}")
-
-    return webp_url
+        llamado_carpeta.upload(
+            carpeta_supabase, 
+            buffer_webp.read(),
+            {'cacheControl': '3600', 'upsert': 'true', 'contentType': 'image/webp'}
+        )
+        
+        webp_url = llamado_carpeta.get_public_url(carpeta_supabase)
+        logger.info(f"Imagen convertida a WebP y cargada en Supabase: {webp_url}")
+        
+        return webp_url
+        
+    except Exception as e:
+        logger.error(f"Error al procesar imagen en Supabase: {e}")
+        raise

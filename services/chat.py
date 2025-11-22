@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, make_response
+import requests
 from utils.db import db
 from models.chat import Chat
 from sqlalchemy import or_
@@ -6,6 +7,7 @@ from sqlalchemy.orm.attributes import flag_modified
 import datetime
 import time
 from utils.logger import get_logger
+from utils.servicios_externos import OBTENER_USERNAME
 logger = get_logger(__name__)
 
 
@@ -49,13 +51,15 @@ def enviar_mensaje():
 
         id_usuario_1 = data.get('id_usuario_1')
         id_usuario_2 = data.get('id_usuario_2')
+        id_producto = data.get('id_producto')
         mensaje = data.get('mensaje')
 
-        if not id_usuario_1 or not id_usuario_2 or not mensaje:
+        if not id_usuario_1 or not id_usuario_2 or not mensaje or not id_producto:
             tiempo_respuesta = time.time() - inicio_tiempo
             logger.error(f"Error validación en enviar_mensaje: Datos incompletos. Tiempo: {tiempo_respuesta:.2f}s")
+            logger.error(f"Datos recibidos - id_usuario_1: {id_usuario_1}, id_usuario_2: {id_usuario_2}, id_producto: {id_producto}, mensaje: {mensaje}")
             return make_response(jsonify({
-                "message": "Datos incompletos (id_usuario_1, id_usuario_2, mensaje)",
+                "message": "Datos incompletos (id_usuario_1, id_usuario_2, mensaje, id_producto)",
                 "status": 400
             }))
         
@@ -69,7 +73,8 @@ def enviar_mensaje():
         logger.info(f"Intento de enviar mensaje de Usuario 1: {id_usuario_1} a Usuario 2: {id_usuario_2}")
 
         # 2. Llama a la función local directamente
-        new_message = agregar_mensaje(id_usuario_1, id_usuario_2, mensaje)
+        print(f"[Debug] Llamando a agregar_mensaje con id_usuario_1: {id_usuario_1}, id_usuario_2: {id_usuario_2}, mensaje: {mensaje}, id_producto: {id_producto}")
+        new_message = agregar_mensaje(id_usuario_1, id_usuario_2, mensaje, id_producto)
 
         if new_message:
             tiempo_respuesta = time.time() - inicio_tiempo
@@ -109,7 +114,7 @@ def obtener_mensaje_entre_usuarios(id_usuario_1, id_usuario_2):
         return []
 
 #Agregar mensaje entre dos usuarios o crear nuevo chat
-def agregar_mensaje(id_usuario_1, id_usuario_2, mensaje):
+def agregar_mensaje(id_usuario_1, id_usuario_2, mensaje, id_producto):
     
     # 1. Busca la sesión de chat existente
     chat = chat_entre_2_usuarios(id_usuario_1, id_usuario_2)
@@ -138,7 +143,8 @@ def agregar_mensaje(id_usuario_1, id_usuario_2, mensaje):
             chat = Chat(
                 id_usuario_1=id_usuario_1,
                 id_usuario_2=id_usuario_2,
-                mensajes=[new_message_data]
+                mensajes=[new_message_data],
+                id_producto=id_producto
             )
             db.session.add(chat)
             
@@ -201,8 +207,35 @@ def obtener_ultimo_mensaje():
 
         # Obtiene el último mensaje de cada chat
         ultimos_mensajes = []
+
         for chat in chats:
             if chat.mensajes:
+                id_receptor = chat.id_usuario_2 if chat.id_usuario_1 == id_usuario else chat.id_usuario_1
+                #print(f"ID Receptor: {id_receptor}")
+                nombre_usuario = "Usuario Desconocido"
+                try:
+                    payload = {'id_usuario': id_receptor}
+                    #print(f"Payload para obtener username: {payload}")
+                    response = requests.post(OBTENER_USERNAME, json=payload, timeout=3)
+                    if response.status_code == 200:
+                        #print(f"Respuesta del servicio de usuarios: {response.json()}")
+                        nombre_usuario = response.json()['data']['username']
+                    else:
+                        logger.warning(f"No se pudo obtener el nombre de usuario para el ID: {id_receptor}. Código de estado: {response.status_code}")
+                except Exception as e:
+                    logger.error(f"Error al conectar con el servicio de usuarios para el ID: {id_receptor}. Error: {e}")
+                ultimo_mensaje = chat.mensajes[-1]  # Último mensaje en el JSONB
+                ultimos_mensajes.append({
+                    "id_chat": chat.id_chat,
+                    "id_usuario_1": chat.id_usuario_1,
+                    "id_usuario_2": chat.id_usuario_2,
+                    "ultimo_mensaje": ultimo_mensaje,
+                    "id_receptor": id_receptor,
+                    "nombre_vendedor": nombre_usuario,
+                    "id_producto": chat.id_producto
+                })
+
+                '''
                 ultimo_mensaje = chat.mensajes[-1]  # Último mensaje en el JSONB
                 ultimos_mensajes.append({
                     "id_chat": chat.id_chat,
@@ -210,6 +243,7 @@ def obtener_ultimo_mensaje():
                     "id_usuario_2": chat.id_usuario_2,
                     "ultimo_mensaje": ultimo_mensaje
                 })
+                '''
         tiempo_respuesta = time.time() - inicio_tiempo
         logger.info(f"Últimos mensajes obtenidos para Usuario: {id_usuario}. Tiempo: {tiempo_respuesta:.2f}s")
         

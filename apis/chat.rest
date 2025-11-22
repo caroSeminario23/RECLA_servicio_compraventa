@@ -9,13 +9,14 @@ Content-Type: application/json
 ###
 
 # Enviar un mensaje
-POST http://127.0.0.1:5000/chat_routes/enviar_mensaje
+POST http://127.0.0.1:5002/chat_routes/enviar_mensaje
 Content-Type: application/json
 
 {
-    "id_usuario_1": 1,
-    "id_usuario_2": 6,
-    "mensaje": "en la universidad, por las tardes"
+    "id_usuario_1": 7,
+    "id_usuario_2": 16,
+    "mensaje": "en la universidad, por las tardes",
+    "id_producto": 17
 }
 
 ###
