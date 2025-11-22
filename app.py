@@ -14,9 +14,10 @@ app = Flask(__name__)
 
 CORS(
     app, 
-    origins = ['http://localhost:*', 'http://127.0.0.1:*'], #dirección del front-end
-    methods = ['GET', 'POST', 'PUT', 'DELETE'],
-    allow_headers = ['Content-Type', 'Authorization']
+    origins = "*", #dirección del front-end
+    methods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allow_headers = ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    supports_credentials = True
 )
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_CONNECTION
@@ -30,6 +31,8 @@ app.register_blueprint(chat_routes, url_prefix='/chat_routes')
 with app.app_context():
     db.create_all()
 
+'''
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5002))
     app.run(host='0.0.0.0', debug=True, port=port)
+'''
