@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 import time
 
+from models.producto import Producto
 from utils.db import db
 from utils.logger import get_logger
 from models.venta import Venta
@@ -78,10 +79,24 @@ def registro_venta():
         id_comprador=id_comprador,
         id_vendedor=id_vendedor
     )
+
+    # Llamar a la tabla producto para actualizar su estado a 'vendido'
+    producto = Producto.query.filter_by(id_producto=id_producto).first()
+    
     try:
         db.session.add(nueva_venta)
+        if producto:
+            producto.comprado = True
+            db.session.add(producto)
+        else:
+            tiempo_respuesta = time.time() - inicio_tiempo
+            logger.error(f"Producto no encontrado en registro_venta: {id_producto}. Tiempo: {tiempo_respuesta:.3f}s")
+            return make_response(jsonify({
+                "message": "Producto no encontrado",
+                "status": 404
+                }),404)
         db.session.commit()
-        logger.info(f"Venta registrada en BD exitosamente: {nueva_venta.id_venta}")
+        logger.info(f"Venta registrada en BD exitosamente: {id_producto} por Comprador: {id_comprador} a Vendedor: {id_vendedor}")
     except IntegrityError as err:
         db.session.rollback()
         tiempo_respuesta = time.time() - inicio_tiempo
@@ -92,6 +107,7 @@ def registro_venta():
             }),400)
     ##requesta devuelve status_code
         ##Servicio contador
+    '''
     id_comprador = nueva_venta.id_comprador
     id_vendedor = nueva_venta.id_vendedor
     payload = {
@@ -100,6 +116,7 @@ def registro_venta():
     }
 
     logger.info(f"Actualizando contadores para Comprador: {id_comprador}, Vendedor: {id_vendedor}")
+    '''
 
     '''
     try:
@@ -123,26 +140,25 @@ def registro_venta():
 
     # Ejecutar verificacion de actividad diaria en background (NO bloquea)
     executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(_registrar_actividad_diaria, id_vendedor)
+    executor.submit(_registrar_actividad_diaria, id_comprador)
     
     tiempo_respuesta = time.time() - inicio_tiempo
-    logger.info(f"Actividad diaria registrada exitosamente para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
+    logger.info(f"Actividad diaria registrada exitosamente para usuario {id_comprador}. Tiempo: {tiempo_respuesta:.3f}s")
 
 
     # Ejecutar el aumento del contador de venta en background (NO bloquea)
     executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(_aumentar_contador, id_vendedor, 2)
+    executor.submit(_aumentar_contador, id_comprador, 2)
     
     tiempo_respuesta = time.time() - inicio_tiempo
-    logger.info(f"Experiencia y contadores actualizados exitosamente para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
+    logger.info(f"Experiencia y contadores actualizados exitosamente para usuario {id_comprador}. Tiempo: {tiempo_respuesta:.3f}s")
 
     # Ejecutar el aumento del contador de venta en background (NO bloquea)
     executor = ThreadPoolExecutor(max_workers=1)
-    executor.submit(_aumentar_experiencia, id_vendedor, 2)
+    executor.submit(_aumentar_experiencia, id_comprador, 2)
 
     tiempo_respuesta = time.time() - inicio_tiempo
-    logger.info(f"Contador de ventas aumentado exitosamente para usuario {id_vendedor}. Tiempo: {tiempo_respuesta:.3f}s")
-
+    logger.info(f"Contador de ventas aumentado exitosamente para usuario {id_comprador}. Tiempo: {tiempo_respuesta:.3f}s")
 
 
     data = {

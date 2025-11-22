@@ -153,14 +153,15 @@ def listar_productos_por_tipo():
         data = request.get_json()
         tipos = data.get("tipo", [])  # Espera lista de enteros
         materiales = data.get("material", "")  # Espera string tipo "1,2"
+        id_usuario_sesion = data.get("id_usuario_sesion", None)
 
-        logger.info(f"Filtrando productos - tipos: {tipos}, materiales: {materiales}")
+        logger.info(f"Filtrando productos - tipos: {tipos}, materiales: {materiales}, id_usuario_sesion: {id_usuario_sesion}")
 
         # Filtrar primero por tipo y comprado
         query = Producto.query
         if tipos:
             query = query.filter(Producto.tipo.in_(tipos))
-        productos = query.filter(Producto.comprado == False).all()
+        productos = query.filter(Producto.comprado == False, Producto.id_vendedor != id_usuario_sesion).all()
 
         logger.info(f"Productos encontrados sin filtro de material: {len(productos)}")
 
